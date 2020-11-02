@@ -27,8 +27,10 @@ class HashTable:
         self.buckets = [None] * capacity
         self.load = 0
 
+#
 # self.capacity = max(capacity, MIN_CAPACITY)
 # self.storage = [None] * self.capacity
+#
 
 
     def get_num_slots(self):
