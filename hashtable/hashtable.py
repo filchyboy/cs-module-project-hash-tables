@@ -206,7 +206,16 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        self.capacity = new_capacity
+        new_buckets = self.buckets
+        self.buckets = [None] * self.capacity
+        for node in new_buckets:
+            if node:
+                self.put(node.key, node.value)
+                if node.next:
+                    while node.next:
+                        self.put(node.next.key, node.next.value)
+                        node = node.next
 
 
 
