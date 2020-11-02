@@ -1,3 +1,5 @@
+import math
+
 class HashTableEntry:
     """
     Linked List hash table key/value pair
@@ -21,7 +23,12 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Your code here
+        self.capacity = capacity
+        self.buckets = [None] * capacity
+        self.load = 0
+
+# self.capacity = max(capacity, MIN_CAPACITY)
+# self.storage = [None] * self.capacity
 
 
     def get_num_slots(self):
@@ -34,7 +41,7 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        return self.capacity
 
 
     def get_load_factor(self):
@@ -43,7 +50,7 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        return self.load / self.capacity
 
 
     def fnv1(self, key):
@@ -51,9 +58,19 @@ class HashTable:
         FNV-1 Hash, 64-bit
 
         Implement this, and/or DJB2.
+
+        Fowler-Noll-Vo hash function. From 1991 this hash algorithm 
+        was developed by  Glenn Fowler, Phong Vo, & Landon Curt Noll.
+
+
         """
 
-        # Your code here
+        FNV_prime = 1099511628211
+        hash = 14695981039346656037
+        for f in key:
+            hash = hash * FNV_prime
+            hash = hash ^ ord(f)
+        return hash
 
 
     def djb2(self, key):
@@ -70,8 +87,8 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.fnv1(key) % self.capacity
+        # return self.djb2(key) % self.capacity
 
     def put(self, key, value):
         """
@@ -81,7 +98,26 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        insert_location = self.buckets[self.hash_index(key)]
+        if insert_location is None:
+            self.buckets[self.hash_index(key)] = HashTableEntry(key, value)
+            self.load += 1
+            if self.get_load_factor() > 0.7:
+                self.resize(self.capacity * 2)
+        else:
+            node = self.buckets[self.hash_index(key)]
+            if node.key == key:
+                node.value = value
+                return
+            while node.next:
+                if node.next.key == key:
+                    node.next.value = value
+                    return
+                node = node.next
+            node.next = HashTableEntry(key, value)
+            self.load += 1
+        if self.get_load_factor() > 0.7:
+            self.resize(self.capacity * 2)
 
 
     def delete(self, key):
@@ -92,7 +128,52 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        node = self.buckets[self.hash_index(key)]
+        if node is not None:
+            if node.next:
+                if node.key == key:
+                    self.buckets[self.hash_index(key)] = node.next
+                    self.load -= 1
+                    if self.get_load_factor() < 0.2 and self.capacity > 8:
+                        if self.capacity / 2 >= 8:
+                            self.resize(math.floor(self.capacity / 2))
+                        else:
+                            self.resize(MIN_CAPACITY)
+                    return
+                while node is not None:
+                    if node.next is not None and node.next.key == key:
+                        if node.next.next is not None:
+                            node.next = node.next.next
+                            self.load -= 1
+                            if self.get_load_factor() < 0.2 and self.capacity > 8:
+                                if self.capacity / 2 >= 8:
+                                    self.resize(math.floor(self.capacity / 2))
+                                else:
+                                    self.resize(MIN_CAPACITY)
+                        else:
+                            node.next = None
+                            self.load -= 1
+                            if self.get_load_factor() < 0.2 and self.capacity > 8:
+                                if self.capacity / 2 >= 8:
+                                    self.resize(math.floor(self.capacity / 2))
+                                else:
+                                    self.resize(MIN_CAPACITY)
+                        break
+                    node = node.next
+            else:
+                if node.key == key:
+                    self.buckets[self.hash_index(key)] = None
+                    self.load -= 1
+                    if self.get_load_factor() < 0.2 and self.capacity > 8:
+                        if self.capacity / 2 >= 8:
+                            self.resize(math.floor(self.capacity / 2))
+                        else:
+                            self.resize(MIN_CAPACITY)
+
+                else:
+                    return
+        else:
+            return
 
 
     def get(self, key):
@@ -103,7 +184,17 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        node = self.buckets[self.hash_index(key)]
+        if node:
+            if node.key == key:
+                return node.value
+            else:
+                while node.next:
+                    if node.next.key == key:
+                        return node.next.value
+                    node = node.next
+        else:
+            return node
 
 
     def resize(self, new_capacity):
